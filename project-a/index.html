@@ -1,0 +1,111 @@
+<!-- 
+Template for IMA's Creative Coding Lab 
+
+Project A: Generative Creatures
+CCLaboratories Biodiversity Atlas 
+-->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Serpens Mutabilis</title>
+
+    <!-- allow special characters, including Arabic, Chinese, Korean, Japanese, etc. -->
+    <meta charset="UTF-8">
+    <!-- link the style sheet -->
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <!-- import p5.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.3/lib/p5.min.js"></script>
+    <script>
+        // prevent scrolling when spacebar and arrow keys are pressed.
+        window.addEventListener("keydown", function (e) { if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) { e.preventDefault(); } }, false);
+    </script>
+</head>
+
+<body>
+    <!-- title -->
+    <div id="title-wrapper">
+        <h1 class="headline black">SERPENS MUTABILIS</h1>
+    </div>
+
+    <!-- main content -->
+    <div id="main-wrapper">
+        <div id="p5-canvas-container">
+            <!-- This is where your p5 sketch will be appended and appear! -->
+        </div>
+        <div class="two-columns">
+            <div class="left">
+                <h3 class="red">Scientific Name:</h3>
+                <p>Serpens Mutabilis</p>
+
+                <h3 class="red">Discovered by / at:</h3>
+                <p>Emma Blosser, Feb, 2025</p>
+
+                <h3 class="green">Family:</h3>
+                <p>Anomalous in classification, Serpens Mutabilis exhibits traits found in deep-sea serpentine species
+                    but lacks definitive ties to any known biological lineage. Some speculate it could be an
+                    evolutionary offshoot of gelatinous abyssal lifeforms, but its unique movement and structural
+                    adaptability set it apart.</p>
+            </div>
+            <div class="right">
+                <h3 class="green">Habitat:</h3>
+                <p>Located exclusively in the deepest regions of the Mariana Trench, Serpens Mutabilis thrives in
+                    complete darkness, far beyond the reach of human civilization. It has been observed at depths
+                    exceeding 10,000 meters, where pressures are extreme and sunlight does not penetrate. Its presence
+                    suggests an adaptation to one of the most inhospitable environments on Earth, though how it sustains
+                    itself remains unknown.</p>
+
+                <h3 class="green">Appearance:</h3>
+                <p>Serpens Mutabilis is an elongated, fluid-like entity with a shape reminiscent of both an eel and a
+                    ribbon, yet its movement is more complex than either. Its body is segmented yet seamless, flexing
+                    and twisting with unnatural smoothness.</p>
+
+                <h3 class="green">Key Characteristics:</h3>
+                <ul>
+                    <li>Gliding Locomotion</li>
+                    <li>Silent Feeding</li>
+                    <li>Anti-Human</li>
+                    <li>Slinkey Movement</li>
+
+                </ul>
+            </div>
+        </div>
+        <div class="one-column">
+            <p>
+                <span class="yellow">What we know so far about SERPENS MUTABILIS?</span>
+                Despite being one of the most elusive deep-sea discoveries, Serpens Mutabilis has sparked significant
+                debate among researchers. Its method of propulsion remains unexplained, as does its ability to remain
+                undetected in such an extreme environment.
+
+                Some scientists believe it sustains itself through microscopic nutrient absorption, while others
+                theorize it preys on similarly unknown abyssal organisms. Its lack of recorded interaction with any
+                other species raises further questions—does it hunt in ways we cannot perceive, or does it exist in an
+                entirely unique ecological niche?
+
+                With only a handful of visual recordings, Serpens Mutabilis remains a mystery, an entity that challenges
+                what we know about life in the deepest parts of the ocean. Further research is ongoing, though its
+                evasive nature makes every new observation a rare and valuable event.
+                <br>
+                <span class="yellow">Guidelines for human interaction with this creature</span> This text can double as
+                fictional part of your story, but could also include instructional aspects on how to interact with your
+                sketch above.
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer" class="black">
+        <p>A CCLab project made by Emma Blosser in Spring 2025</p>
+    </div>
+
+    <!-- Home: Link back to the ATLAS page-->
+    <div id="home">
+        <a href="https://cclab.work/atlas">Back to the ATLAS</a>
+    </div>
+
+    <!-- Include your sketch.js file here -->
+    <script src="sketch.js" type="text/javascript"> </script>
+</body>
+
+</html>
