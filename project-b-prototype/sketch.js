@@ -74,7 +74,7 @@ class DraggableProduct {
     this.img = img;
     this.label = label;
     this.message = message;
-    this.effect = effect; // string like "glow", "blush", etc.
+    this.effect = effect;
 
     this.dragging = false;
     this.offsetX = 0;
@@ -82,22 +82,22 @@ class DraggableProduct {
     this.applied = false;
   }
 
-  checkHover(mx, my) {
-    return dist(mx, my, this.x, this.y) < 50; // circular bounds
+  checkHover(mouseX, mouseY) {
+    return dist(mouseX, mouseY, this.x, this.y) < 50;
   }
 
   startDrag(mx, my) {
     if (this.checkHover(mx, my)) {
       this.dragging = true;
-      this.offsetX = this.x - mx;
-      this.offsetY = this.y - my;
+      this.offsetX = this.x - mouseX;
+      this.offsetY = this.y - mouseY;
     }
   }
 
   drag(mx, my) {
     if (this.dragging) {
-      this.x = mx + this.offsetX;
-      this.y = my + this.offsetY;
+      this.x = mouseX + this.offsetX;
+      this.y = mouseY + this.offsetY;
     }
   }
 
@@ -157,7 +157,7 @@ class FaceCanvas {
     }
     pop();
 
-    // Thought bubble
+
     if (this.showMessage && millis() - this.messageStart < 3000) {
       this.displayMessage();
     } else if (this.showMessage) {
