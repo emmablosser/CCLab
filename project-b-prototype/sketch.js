@@ -1,15 +1,14 @@
-let steps = [];
-let concealerImg;
-let moisturizerImg;
-let lipstickImg;
-let mascaraImg;
-let blushImg;
-let sound;
+let cam;
 let products = [];
+let appliedProducts = 0;
+let exposureBoost = 1.0;
+let targetExposure = 1.0;
 let face;
+let mirrorRadius = 150;
+
+let concealerImg, moisturizerImg, lipstickImg, mascaraImg, blushImg;
 
 function preload() {
-  sound = loadSound("assets/beat.mp3");
   concealerImg = loadImage("assets/concealer.jpeg");
   moisturizerImg = loadImage("assets/moisturizer.jpeg");
   lipstickImg = loadImage("assets/lipstick.png");
@@ -21,60 +20,122 @@ function setup() {
   let canvas = createCanvas(800, 500);
   canvas.parent("p5-canvas-container");
 
+
+  cam = createCapture(VIDEO);
+  cam.size(800, 600);
+  cam.hide();
+
   face = new FaceCanvas(width / 2, height / 2);
 
-  let spacing = 150;
-  products.push(new DraggableProduct(spacing * 0 + 100, height - 100, concealerImg, "Concealer", "Hide all signs of exhaustion."));
-  products.push(new DraggableProduct(spacing * 1 + 100, height - 100, moisturizerImg, "Moisturizer", "Seal it in. Even your feelings.", "glow"));
-  products.push(new DraggableProduct(spacing * 2 + 100, height - 100, lipstickImg, "Lipstick", "A bold lip for a quiet you."));
-  products.push(new DraggableProduct(spacing * 3 + 100, height - 100, mascaraImg, "Mascara", "Cry carefully."));
-  products.push(new DraggableProduct(spacing * 4 + 100, height - 100, blushImg, "Blush", "Fake the flush. Pretend it’s joy.", "blush"));
-
-
+  let spacing = 140;
+  let startY = height - 80;
+  products.push(new DraggableProduct(spacing * 0 + 80, startY, concealerImg, "Concealer", "Hide all signs of exhaustion."));
+  products.push(new DraggableProduct(spacing * 1 + 80, startY, moisturizerImg, "Moisturizer", "Seal it in. Even your feelings."));
+  products.push(new DraggableProduct(spacing * 2 + 80, startY, lipstickImg, "Lipstick", "A bold lip for a quiet you."));
+  products.push(new DraggableProduct(spacing * 3 + 80, startY, mascaraImg, "Mascara", "Cry carefully."));
+  products.push(new DraggableProduct(spacing * 4 + 80, startY, blushImg, "Blush", "Fake the flush. Pretend it’s joy."));
 }
 
 function draw() {
   background(245);
 
+  cam.loadPixels();
+
+  let gridSize;
+  let targetExposure;
+
+  if (appliedProducts == 0) {
+    gridSize = 18;
+    targetExposure = 1.0;
+  } else if (appliedProducts == 1) {
+    gridSize = 15;
+    targetExposure = 1.2;
+  } else if (appliedProducts == 2) {
+    gridSize = 12;
+    targetExposure = 1.5;
+  } else if (appliedProducts == 3) {
+    gridSize = 7;
+    targetExposure = 2.0;
+  } else if (appliedProducts == 4) {
+    gridSize = 5;
+    targetExposure = 2.0;
+  } else {
+    gridSize = 3;
+    targetExposure = 2.5;
+  }
+
+  exposureBoost = lerp(exposureBoost, targetExposure, 0.05);
+
+  // mirror
+  push();
+  translate(width / 2, height / 2);
+  stroke(180);
+  strokeWeight(5);
+  noFill();
+  ellipse(0, 0, mirrorRadius * 2, mirrorRadius * 2);
+  pop();
+
+  // webcam inside the mirror
+  push();
+  translate(width / 2, height / 2);
+  for (let y = -mirrorRadius; y < mirrorRadius; y += gridSize) {
+    for (let x = -mirrorRadius; x < mirrorRadius; x += gridSize) {
+      if (dist(x, y, 0, 0) < mirrorRadius) {
+        let cx = constrain(x + width / 2, 0, cam.width - 1);
+        let cy = constrain(y + height / 2, 0, cam.height - 1);
+        let index = (cx + cy * cam.width) * 4;
+        let r = cam.pixels[index + 0] * exposureBoost;
+        let g = cam.pixels[index + 1] * exposureBoost;
+        let b = cam.pixels[index + 2] * exposureBoost;
+        fill(r, g, b);
+        noStroke();
+        rect(x, y, gridSize, gridSize);
+      }
+    }
+  }
+  pop();
+
+
   face.display();
 
-  for (let i = 0; i < products.length; i++) {
-    products[i].display();
+  // products
+  for (let p of products) {
+    p.display();
   }
 }
-
+//mouse movements
 function mousePressed() {
-  for (let i = 0; i < products.length; i++) {
-    products[i].startDrag(mouseX, mouseY);
+  for (let p of products) {
+    p.startDrag(mouseX, mouseY);
   }
 }
 
 function mouseDragged() {
-  for (let i = 0; i < products.length; i++) {
-    products[i].drag(mouseX, mouseY);
+  for (let p of products) {
+    p.drag(mouseX, mouseY);
   }
 }
 
 function mouseReleased() {
-  for (let i = 0; i < products.length; i++) {
-    let p = products[i];
-    let dropped = p.stopDrag(face.x, face.y, 100); // Drop radius
-    if (dropped) {
-      face.applyEffect(p.effect, p.message);
+  for (let p of products) {
+    let dropped = p.stopDrag(width / 2, height / 2, mirrorRadius);
+    if (dropped && !p.applied) {
+      face.showMessage(p.message);
+      appliedProducts++;
+      targetExposure += 0.4;
+      p.applied = true;
     }
   }
 }
 
 
-
 class DraggableProduct {
-  constructor(x, y, img, label, message, effect) {
+  constructor(x, y, img, label, message) {
     this.x = x;
     this.y = y;
     this.img = img;
     this.label = label;
     this.message = message;
-    this.effect = effect;
 
     this.dragging = false;
     this.offsetX = 0;
@@ -86,28 +147,28 @@ class DraggableProduct {
     return dist(mouseX, mouseY, this.x, this.y) < 50;
   }
 
-  startDrag(mx, my) {
-    if (this.checkHover(mx, my)) {
+  startDrag(mouseX, mouseY) {
+    if (this.checkHover(mouseX, mouseY)) {
       this.dragging = true;
       this.offsetX = this.x - mouseX;
       this.offsetY = this.y - mouseY;
     }
   }
 
-  drag(mx, my) {
+  drag(mouseX, mouseY) {
     if (this.dragging) {
       this.x = mouseX + this.offsetX;
       this.y = mouseY + this.offsetY;
     }
   }
 
-  stopDrag(faceX, faceY, faceRadius) {
+  stopDrag(targetX, targetY, targetRadius) {
     if (this.dragging) {
-      this.dragging = false;
-      if (dist(this.x, this.y, faceX, faceY) < faceRadius) {
-        this.applied = true;
+      if (dist(this.x, this.y, targetX, targetY) < targetRadius) {
+        this.dragging = false;
         return true;
       }
+      this.dragging = false;
     }
     return false;
   }
@@ -117,65 +178,39 @@ class DraggableProduct {
     image(this.img, this.x, this.y, 80, 80);
   }
 }
+
 class FaceCanvas {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-    this.glow = false;
-    this.blush = false;
     this.message = "";
-    this.showMessage = false;
-    this.messageStart = 0;
+    this.showing = false;
+    this.messageTimer = 0;
   }
 
-  applyEffect(effect, message) {
-    if (effect === "glow") this.glow = true;
-    if (effect === "blush") this.blush = true;
-    this.message = message;
-    this.showMessage = true;
-    this.messageStart = millis();
+  showMessage(msg) {
+    this.message = msg;
+    this.showing = true;
+    this.messageTimer = millis();
   }
 
   display() {
-    push();
-    translate(this.x, this.y);
-    fill(255, 230, 230);
-    ellipse(0, 0, 200); // face
-
-    if (this.glow) {
-      noFill();
-      stroke(255, 220, 150, 100);
-      strokeWeight(10);
-      ellipse(0, 0, 220);
+    if (this.showing) {
+      if (millis() - this.messageTimer < 3000) {
+        push();
+        fill(255);
+        stroke(100);
+        strokeWeight(1);
+        rect(this.x + 100, this.y - 120, 180, 50, 10);
+        noStroke();
+        fill(0);
+        textSize(12);
+        textAlign(LEFT, TOP);
+        text(this.message, this.x + 110, this.y - 115, 160);
+        pop();
+      } else {
+        this.showing = false;
+      }
     }
-
-    if (this.blush) {
-      noStroke();
-      fill(255, 100, 150, 120);
-      ellipse(-50, 20, 40, 20);
-      ellipse(50, 20, 40, 20);
-    }
-    pop();
-
-
-    if (this.showMessage && millis() - this.messageStart < 3000) {
-      this.displayMessage();
-    } else if (this.showMessage) {
-      this.showMessage = false;
-    }
-  }
-
-  displayMessage() {
-    push();
-    fill(255);
-    stroke(100);
-    strokeWeight(1);
-    rect(this.x + 110, this.y - 60, 180, 50, 10);
-    noStroke();
-    fill(0);
-    textSize(12);
-    textAlign(LEFT, TOP);
-    text(this.message, this.x + 120, this.y - 55, 160);
-    pop();
   }
 }
