@@ -4,22 +4,22 @@ let appliedProducts = 0;
 let exposureBoost = 1.0;
 let targetExposure = 1.0;
 let face;
-let mirrorRadius = 150;
+let mirrorRadius = 250;
 let shimmerParticles = [];
 
 
 let concealerImg, moisturizerImg, lipstickImg, mascaraImg, blushImg;
 
 function preload() {
-  concealerImg = loadImage("assets/concealer.jpeg");
-  moisturizerImg = loadImage("assets/moisturizer.jpeg");
-  lipstickImg = loadImage("assets/lipstick.png");
-  mascaraImg = loadImage("assets/mascara.png");
-  blushImg = loadImage("assets/blush.jpeg");
+  concealerImg = loadImage("assets/concealer-edited.png");
+  moisturizerImg = loadImage("assets/moisturizer-edited.png");
+  lipstickImg = loadImage("assets/lipstick-edited.png");
+  mascaraImg = loadImage("assets/mascara-edited.png");
+  blushImg = loadImage("assets/blush-edited.png");
 }
 
 function setup() {
-  let canvas = createCanvas(800, 500);
+  let canvas = createCanvas(1000, 700);
   canvas.parent("p5-canvas-container");
 
 
@@ -30,12 +30,12 @@ function setup() {
   face = new FaceCanvas(width / 2, height / 2);
 
   let spacing = 150;
-  let startY = height - 40;
-  products.push(new DraggableProduct(spacing * 0 + 80, startY, concealerImg, "Concealer", "Hide all signs of exhaustion."));
-  products.push(new DraggableProduct(spacing * 1 + 80, startY, moisturizerImg, "Moisturizer", "Seal it in. Even your feelings."));
-  products.push(new DraggableProduct(spacing * 2 + 80, startY, lipstickImg, "Lipstick", "A bold lip for a quiet you."));
-  products.push(new DraggableProduct(spacing * 3 + 80, startY, mascaraImg, "Mascara", "Cry carefully."));
-  products.push(new DraggableProduct(spacing * 4 + 80, startY, blushImg, "Blush", "Fake the flush. Pretend it’s joy."));
+  let startY = height - 58;
+  products.push(new DraggableProduct(spacing * 0 + 180, startY, concealerImg, "Concealer", "Hide all signs of exhaustion."));
+  products.push(new DraggableProduct(spacing * 1 + 180, startY, moisturizerImg, "Moisturizer", "Seal it in. Even your feelings."));
+  products.push(new DraggableProduct(spacing * 2 + 180, startY, lipstickImg, "Lipstick", "A bold lip for a quiet you."));
+  products.push(new DraggableProduct(spacing * 3 + 180, startY, mascaraImg, "Mascara", "Cry carefully."));
+  products.push(new DraggableProduct(spacing * 4 + 180, startY, blushImg, "Blush", "Fake the flush. Pretend it’s joy."));
 
   for (let i = 0; i < 80; i++) {
     shimmerParticles.push(new ShimmerParticle());
@@ -58,7 +58,7 @@ function draw() {
   exposureBoost = lerp(exposureBoost, targetExposure, 0.05);
 
 
-  mirrorRadius = 150;
+  mirrorRadius = 250;
   let pixelRadius;
   let gridSize;
 
@@ -67,28 +67,28 @@ function draw() {
     gridSize = 20;
     pixelRadius = mirrorRadius + 15;
   } else if (appliedProducts === 1) {
-    gridSize = 15;
+    gridSize = 17;
     pixelRadius = mirrorRadius + 10;
   } else if (appliedProducts === 2) {
-    gridSize = 10;
+    gridSize = 12;
     pixelRadius = mirrorRadius + 5;
   } else if (appliedProducts === 3) {
-    gridSize = 7;
+    gridSize = 9;
     pixelRadius = mirrorRadius + 2;
   } else {
-    gridSize = 3;
+    gridSize = 5;
     pixelRadius = mirrorRadius;
   }
 
 
   //webcam within the mirror
   push();
-  translate(width / 2, height / 2);
+  translate(width / 2, 300);
   for (let y = -pixelRadius; y < pixelRadius; y += gridSize) {
     for (let x = -pixelRadius; x < pixelRadius; x += gridSize) {
       let centerDist = dist(x + gridSize / 2, y + gridSize / 2, 0, 0);
       if (centerDist < pixelRadius - gridSize / 2) {
-        let camX = constrain(x + width / 2, 0, cam.width - 1);
+        let camX = constrain(width - (x + width / 2), 0, cam.width - 1); //flipped camera
         let camY = constrain(y + height / 2, 0, cam.height - 1);
         let index = (int(camX) + int(camY) * cam.width) * 4;
         let r = cam.pixels[index + 0] * exposureBoost;
@@ -102,9 +102,10 @@ function draw() {
   }
   pop();
 
+
   // mirror frame
   push();
-  translate(width / 2, height / 2);
+  translate(width / 2, 300);
 
   // outer border
   noFill();
@@ -123,6 +124,21 @@ function draw() {
 
   // message bubble
   face.display();
+
+  // product bay
+  let bayWidth = width - 120;
+  let bayHeight = 95;
+  let bayX = width / 2 - bayWidth / 2;
+  let bayY = height - 110;
+
+  push();
+  rectMode(CORNER);
+  noStroke();
+  fill(120, 80, 130, 100);
+  rect(bayX + 5, bayY + 8, bayWidth, bayHeight, 25);
+
+  fill(185, 150, 180);
+  rect(bayX, bayY, bayWidth, bayHeight, 25);
 
   // products
   for (let p of products) {
@@ -145,7 +161,7 @@ function mouseDragged() {
 
 function mouseReleased() {
   for (let p of products) {
-    let dropped = p.stopDrag(width / 2, height / 2, mirrorRadius);
+    let dropped = p.stopDrag(width / 2, 300, mirrorRadius);
     if (dropped && !p.applied) {
       face.showMessage(p.message);
       appliedProducts++;
