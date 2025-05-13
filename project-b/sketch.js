@@ -7,6 +7,14 @@ let face;
 let mirrorRadius = 250;
 let shimmerParticles = [];
 
+let faceapi;
+let detections;
+
+// by default all options are set to true
+const detectionOptions = {
+  withLandmarks: true,
+  withDescriptors: false,
+};
 
 let concealerImg, moisturizerImg, lipstickImg, mascaraImg, blushImg;
 
@@ -27,6 +35,8 @@ function setup() {
   cam.size(800, 600);
   cam.hide();
 
+  faceapi = ml5.faceApi(cam, detectionOptions, modelReady);
+
   face = new FaceCanvas(width / 2, height / 2);
 
   let spacing = 150;
@@ -37,7 +47,7 @@ function setup() {
   products.push(new DraggableProduct(spacing * 3 + 180, startY, mascaraImg, "Mascara", "Cry carefully."));
   products.push(new DraggableProduct(spacing * 4 + 180, startY, blushImg, "Blush", "Fake the flush. Pretend it’s joy."));
 
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 50; i++) {
     shimmerParticles.push(new ShimmerParticle());
   }
 
@@ -50,19 +60,18 @@ function draw() {
     sp.update();
     sp.display();
   }
-
+  if (cam.pixels.length > 0) {
+    cam.loadPixels();
+  }
   cam.loadPixels();
-  cam.updatePixels();
-
 
   exposureBoost = lerp(exposureBoost, targetExposure, 0.05);
-
 
   mirrorRadius = 250;
   let pixelRadius;
   let gridSize;
 
-  //adujusting the pixels shown on the webcam footage to be hidden within the mirror frame
+  //adujusting the pixels, hidden within the mirror frame
   if (appliedProducts === 0) {
     gridSize = 20;
     pixelRadius = mirrorRadius + 15;
@@ -80,7 +89,6 @@ function draw() {
     pixelRadius = mirrorRadius;
   }
 
-
   //webcam within the mirror
   push();
   translate(width / 2, 300);
@@ -94,6 +102,13 @@ function draw() {
         let r = cam.pixels[index + 0] * exposureBoost;
         let g = cam.pixels[index + 1] * exposureBoost;
         let b = cam.pixels[index + 2] * exposureBoost;
+
+        if (moisturizerApplied) {
+          b += 30;
+        }
+        if (blushApplied) {
+          r += 40;
+        }
         fill(r, g, b);
         noStroke();
         ellipseMode(CORNER);
@@ -101,9 +116,16 @@ function draw() {
       }
     }
   }
+  pop();
+
+
+  if (detections) {
+    if (detections.length > 0) {
+      drawLandmarks(detections);
+    }
+  }
 
   //mirror radius
-  pop();
   push();
   translate(width / 2, 300);
 
@@ -126,7 +148,6 @@ function draw() {
   stroke(255, 215, 100);
   strokeWeight(38);
   ellipse(0, 0, mirrorRadius * 2 + 10);
-
 
   stroke(255, 255, 255, 80);
   strokeWeight(8);
@@ -172,6 +193,12 @@ function mouseDragged() {
   }
 }
 
+let lipstickApplied = false;
+let mascaraApplied = false;
+let moisturizerApplied = false;
+let concealerApplied = false;
+let blushApplied = false;
+
 function mouseReleased() {
   for (let p of products) {
     let dropped = p.stopDrag(width / 2, 300, mirrorRadius);
@@ -180,10 +207,143 @@ function mouseReleased() {
       appliedProducts++;
       targetExposure += 0.4;
       p.applied = true;
+      console.log(p.label);
+
+      if (p.label == "Lipstick") {
+        lipstickApplied = true;
+      }
+      if (p.label == "Mascara") {
+        mascaraApplied = true;
+      }
+      if (p.label == "Moisturizer") {
+        moisturizerApplied = true;
+      }
+      if (p.label == "Concealer") {
+        concealerApplied = true;
+      }
+      if (p.label == "Blush") {
+        blushApplied = true;
+      }
     }
   }
 }
 
+function modelReady() {
+  console.log("FaceAPI is ready!");
+  faceapi.detect(gotResults);
+}
+
+function gotResults(error, results) {
+  if (error) {
+    console.log(error);
+    return;
+  }
+  // console.log(result)
+  detections = results;
+
+  // repeat the detection
+  faceapi.detect(gotResults);
+}
+
+function drawBox(detections) {
+  for (let i = 0; i < detections.length; i += 1) {
+    const alignedRect = detections[i].alignedRect;
+    const x = alignedRect._box._x;
+    const y = alignedRect._box._y;
+    const boxWidth = alignedRect._box._width;
+    const boxHeight = alignedRect._box._height;
+
+    noFill();
+    stroke(161, 95, 251);
+    strokeWeight(2);
+    rect(x, y, boxWidth, boxHeight);
+  }
+}
+
+function drawLandmarks(detections) {
+  push();
+  translate(0, 300 - height / 2);
+  noFill();
+  stroke(161, 95, 251);
+  strokeWeight(2);
+
+  for (let i = 0; i < detections.length; i += 1) {
+    const mouth = detections[i].parts.mouth;
+    const nose = detections[i].parts.nose;
+    const leftEye = detections[i].parts.leftEye;
+    const rightEye = detections[i].parts.rightEye;
+    const rightEyeBrow = detections[i].parts.rightEyeBrow;
+    const leftEyeBrow = detections[i].parts.leftEyeBrow;
+
+    if (lipstickApplied) {
+      fill(255, 0, 0, 80);
+      noStroke();
+      drawPart(mouth, true);
+    }
+
+    if (mascaraApplied) {
+      noFill();
+      stroke(0, 0, 0, 80);
+      strokeWeight(2);
+      drawPart(leftEye, true);
+      drawPart(rightEye, true);
+
+      fill(0, 0, 0, 30);
+      noStroke();
+      drawPart(leftEyeBrow, true);
+      drawPart(rightEyeBrow, true);
+    }
+
+    if (concealerApplied) {
+      fill(0, 0, 0, 30);
+      noStroke();
+      drawPart(nose, true);
+    }
+
+
+    // noFill();
+    // stroke(161, 95, 251);
+    // strokeWeight(2);
+    // drawPart(nose, false);
+
+    // noFill();
+    // stroke(161, 95, 251);
+    // strokeWeight(2);
+    // drawPart(leftEye, true);
+
+    // noFill();
+    // stroke(161, 95, 251);
+    // strokeWeight(2);
+    // drawPart(leftEyeBrow, false);
+
+    // noFill();
+    // stroke(161, 95, 251);
+    // strokeWeight(2);
+    // drawPart(rightEye, true);
+
+    // noFill();
+    // stroke(161, 95, 251);
+    // strokeWeight(2);
+    // drawPart(rightEyeBrow, false);
+
+    pop();
+  }
+}
+
+function drawPart(feature, closed) {
+  beginShape();
+  for (let i = 0; i < feature.length; i += 1) {
+    let x = width - feature[i]._x;
+    let y = feature[i]._y;
+    vertex(x, y);
+  }
+
+  if (closed === true) {
+    endShape(CLOSE);
+  } else {
+    endShape();
+  }
+}
 
 class DraggableProduct {
   constructor(x, y, img, label, message) {
@@ -323,3 +483,23 @@ class ShimmerParticle {
     circle(this.x, this.y, this.size);
   }
 }
+
+//reset
+function keyPressed() {
+  if (key === 'b') {
+    appliedProducts = 0;
+    exposureBoost = 1.0;
+    targetExposure = 1.0;
+
+    for (let p of products) {
+      p.applied = false;
+    }
+
+    lipstickApplied = false;
+    mascaraApplied = false;
+    moisturizerApplied = false;
+    concealerApplied = false;
+    blushApplied = false;
+  }
+}
+
